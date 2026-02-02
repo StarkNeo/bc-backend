@@ -1,4 +1,14 @@
-const { Pool } = require('pg');
+const pg = require('pg');
+const { Pool } = pg;
+
+
+const pool = new Pool({
+connectionString: process.env.PGSTRING,
+ssl: { rejectUnauthorized: false }
+});
+
+module.exports = pool; 
+/*const { Pool } = require('pg');
 
 const pool = new Pool({
   user: process.env.USERDB,
@@ -8,4 +18,4 @@ const pool = new Pool({
   port: process.env.PORTDB,
 });
 
-module.exports = pool;
+module.exports = pool;*/
