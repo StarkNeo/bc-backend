@@ -1,11 +1,14 @@
 const pg = require('pg');
 const { Pool } = pg;
+const dotenv = require('dotenv').config();
+
 
 
 const pool = new Pool({
-connectionString: process.env.PGSTRING,
+connectionString:process.env.PGSTRING,
 ssl: { rejectUnauthorized: false }
 });
+
 
 module.exports = pool; 
 /*const { Pool } = require('pg');
