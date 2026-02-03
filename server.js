@@ -14,12 +14,12 @@ const passportConfig = require('./config/passportConfig');
 dotenv.config();
 passportConfig(passport)
 const app = express();
-const corsOptions = {
+/*const corsOptions = {
     origin: [`http://${process.env.HOST}:5173`],
     credentials:true,
     optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+};*/
+app.use(cors());
 app.use(express.json());
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -86,5 +86,5 @@ app.get('/clientes', async (req, res) => {
 const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
-    console.log(`Backend escuchando en http://localhost:${PORT}`);
+    console.log(`Backend escuchando`);
 });
