@@ -81,6 +81,15 @@ app.get('/clientes', async (req, res) => {
     }
 });
 
+app.get('/balanzas-pending', async (req, res) => {
+    try {
+        crud.getBalanzasPending(req, res, pool);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error obteniendo balanzas pendientes' });
+    }
+});
+
 
 
 const PORT = process.env.PORT;
