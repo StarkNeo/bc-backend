@@ -33,7 +33,7 @@ async function getBalanzasPending(req, res, pool) {
     console.log(`Obteniendo balanzas pendientes para ${month}/${year}...`);
     console.log(typeof month, typeof year);
     try {
-        const result = await pool.query('SELECT * FROM balanza_control WHERE ejercicio<=$1 AND mes<$2', [year, month]);
+        const result = await pool.query('SELECT balanza_control.id, balanza_control.rfc, balanza_control.ejercicio, balanza_control.mes, clientes.nombre FROM balanza_control JOIN clientes ON balanza_control.rfc = clientes.rfc WHERE ejercicio<=$1 AND mes<$2', [year, month]);
         res.json(result.rows);
     } catch (error) {
         console.error(error);
