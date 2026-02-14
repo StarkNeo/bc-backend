@@ -38,10 +38,12 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No se envió archivo' });
         }
+
         const result = excelToJson(
             {
                 source: req.file.buffer,
-                header: { rows: 7 },
+                /*header: { rows: 7 },
+                
                 columnToKey: {
                     A: 'cuenta',
                     B: 'nombre',
@@ -51,11 +53,48 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
                     F: 'abonos',
                     G: 'saldo_final_deudor',
                     H: 'saldo_final_acreedor'
-                }
+                }*/
             }
         )
-       
-        await crud.saveBalanzaToDB(result, req, res, pool);
+        //Validar Estrucura del Excel
+        let hasKeyBalanza = Object.keys(result).includes('Balanza de Comprobación');
+        if (!hasKeyBalanza) {
+            return res.status(400).json({ message: 'Archivo Excel no tiene la estructura esperada'});
+        }
+        let hasMaxColumns = Math.max(...result['Balanza de Comprobación'].map(row => Object.keys(row).length)) >= 8;
+        if (!hasKeyBalanza || !hasMaxColumns) {
+            return res.status(400).json({ message: 'Archivo Excel no tiene la estructura esperada' });
+        }
+
+        const objectsFiltered = result['Balanza de Comprobación'].filter(row => {
+            let columnA = row.A ? row.A.trim() : '';
+            if (columnA !== '') {
+                return columnA.includes('-');
+            }
+        })
+        
+        const objectsFilteredMapped = objectsFiltered.map((row) => {
+            row.cuenta = row.A;
+            delete row.A;
+            row.nombre = row.B ? row.B.trim() : '';
+            delete row.B;
+            row.saldo_inicial_deudor = row.C ? Number(row.C) : 0;
+            delete row.C;
+            row.saldo_inicial_acreedor = row.D ? Number(row.D) : 0;
+            delete row.D;
+            row.cargos = row.E ? Number(row.E) : 0;
+            delete row.E;
+            row.abonos = row.F ? Number(row.F) : 0;
+            delete row.F;
+            row.saldo_final_deudor = row.G ? Number(row.G) : 0;
+            delete row.G;
+            row.saldo_final_acreedor = row.H ? Number(row.H) : 0;
+            delete row.H;
+            return row;
+        });
+        await crud.saveBalanzaToDB(objectsFilteredMapped, req, res, pool);
+
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error procesando el archivo' });

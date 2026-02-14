@@ -3,18 +3,19 @@ const { Pool } = pg;
 const dotenv = require('dotenv').config();
 
 
-//PRODUCCION EN RENDER
+/*PRODUCCION EN RENDER
 const pool = new Pool({
 connectionString:process.env.PGSTRING,
 ssl: { rejectUnauthorized: false }
 });
 
-
 module.exports = pool; 
+*/
+
 //const { Pool } = require('pg');
 //local development
 
-/*const pool = new Pool({
+const pool = new Pool({
   user: process.env.USERDB,
   host: process.env.HOSTDB,
   database: process.env.NAMEDB,
@@ -23,4 +24,3 @@ module.exports = pool;
 });
 
 module.exports = pool;
-*/

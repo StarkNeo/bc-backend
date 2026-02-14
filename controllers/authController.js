@@ -4,10 +4,15 @@ const qrCode = require('qrcode');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const passport = require('passport');
+const validation = require('./fieldsValidation');
 
 const resetPassword = async (req, res) => {
     try {
         const { userId, newPassword } = req.body;
+        const passwordvalidation = validation.validatePassword(newPassword);
+        if (!passwordvalidation) {
+            return res.status(400).json({ message: 'Contraseña no válida' });
+        }        
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         const result = await pool.query('UPDATE usuarios SET password_hash=$1, must_change_password=$2 WHERE id=$3 RETURNING id', [hashedPassword, false, userId]);
         console.log(result);
@@ -21,6 +26,16 @@ const resetPassword = async (req, res) => {
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        const passwordValidation = validation.validatePassword(password);
+        const emailValidation = validation.validateEmail(email);
+        if (!emailValidation || !passwordValidation) {
+            if (!emailValidation) {
+                return res.status(400).json({ message: 'Usuario no válido' });
+            }
+            if (!passwordValidation) {
+                return res.status(400).json({ message: 'Contraseña no válida' });
+            }
+        }
         // Buscar usuario en la base de datos
         const { rows } = await pool.query('SELECT * FROM usuarios WHERE email=$1', [email]);
 
