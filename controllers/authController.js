@@ -5,17 +5,18 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const passport = require('passport');
 const validation = require('./fieldsValidation');
+const e = require('express');
 
 const resetPassword = async (req, res) => {
     try {
         const { userId, newPassword } = req.body;
         const passwordvalidation = validation.validatePassword(newPassword);
+
         if (!passwordvalidation) {
             return res.status(400).json({ message: 'Contraseña no válida' });
         }        
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         const result = await pool.query('UPDATE usuarios SET password_hash=$1, must_change_password=$2 WHERE id=$3 RETURNING id', [hashedPassword, false, userId]);
-        console.log(result);
         return res.status(201).json({ message: 'Contraseña actualizada exitosamente', userId: result.rows[0].id });
     } catch (error) {
         console.log(error)
@@ -28,6 +29,8 @@ const login = async (req, res, next) => {
         const { email, password } = req.body;
         const passwordValidation = validation.validatePassword(password);
         const emailValidation = validation.validateEmail(email);
+        
+
         if (!emailValidation || !passwordValidation) {
             if (!emailValidation) {
                 return res.status(400).json({ message: 'Usuario no válido' });
@@ -126,7 +129,6 @@ const authStatus = async (req, res) => {
     }
 };
 const logout = async (req, res) => {
-    console.log("Logout request session:", req.session);
     try {
         // 1. Cerrar sesión de Passport
         req.logout(err => {
@@ -299,7 +301,6 @@ const verify2FA = async (req, res) => {
         //Obtener Usuario de la BD
         const result = await pool.query('SELECT * FROM usuarios WHERE id=$1', [userId]);
         const dbUser = result.rows[0];
-        console.log("User id:", dbUser);
         if (!dbUser) {
             return res.status(400).json({ message: 'Usuario no encontrado' });
         }
@@ -346,7 +347,6 @@ const verify2FA = async (req, res) => {
 };
 
 const reset2FA = async (req, res) => {
-    console.log("Reset 2FA request body:", req.body);
     const { userId } = req.body;
     try {
         await pool.query('UPDATE usuarios SET twofa_secret=$1, is_twofa_enabled=$2 WHERE id=$3', [null, false, userId]);
