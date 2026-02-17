@@ -80,33 +80,7 @@ const login = async (req, res, next) => {
         console.log(error);
         res.status(500).json({ message: 'Error en el login' });
     }
-    /* CODIGO PARA GENERAR EL CODIGO 2FA DESDE AQUI
-    passport.authenticate('local', (err, user, info) => {
-        if (err) return next(err);
-        if (!user) return res.status(400).json({ message: info.message });
-
-        try {
-            // Aquí NO se hace login todavía, se genera el código 2FA
-            // Lógica para generar y enviar el código 2FA al usuario
-            const code = speakeasy.totp({
-                    secret: user.twofa_secret,
-                    encoding: 'base32'
-                });
-            
-
-            console.log("Código 2FA generado:", code); // En producción se envía por email/SMS
-
-            return res.json({
-                message: "Código enviado",
-                userId: user.id,
-                requires2FA: user.is_twofa_enabled
-            });
-        }
-        catch (error) {
-            res.status(500).json({ message: 'Error en el login' });
-        }
-
-    })(req, res, next);*/
+   
 };
 
 
@@ -156,29 +130,6 @@ const logout = async (req, res) => {
 
 };
 
-/*ESTE CODIGO SOLO SIRVE CUANDO EL USUARIO ACTIVA 2FA DESDE SU PERFIL
-Y NO EN EL LOGIN INICIAL
-
-const setup2FA = async (req, res) => {
-    try {
-        console.log('Setup 2FA for user:', req.user);
-        const user = req.user;
-        const secret = speakeasy.generateSecret();
-        console.log('Generated secret:', secret);
-        await pool.query('UPDATE usuarios SET twofa_secret=$1, is_twofa_enabled=$2 WHERE id=$3', [secret.base32, true, user.id]);
-        const url = speakeasy.otpauthURL(
-            {
-                secret: secret.base32,
-                label: user.email,
-                issuer: 'BCPortal',
-                encoding: 'base32'
-            });
-        const qrImageUrl = await qrCode.toDataURL(url);
-        return res.json({ message: '2FA configurado', secret: secret.base32, qrImageUrl });
-    } catch (error) {
-        res.status(500).json({ message: 'Error en la configuración de 2FA' });
-    }
-};*/
 
 const setup2FA = async (req, res) => {
     try {
@@ -274,7 +225,7 @@ const verify2FASetup = async (req, res) => {
         );
         // GENERAR TOKEN AQUÍ MISMO
         const token = jwt.sign(
-            { id: userId, email: user.email },
+            { id: userId, email: user.email, nombre: user.nombre },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -320,25 +271,12 @@ const verify2FA = async (req, res) => {
 
         //GENERA JWT
         const jwtToken = jwt.sign(
-            { id: dbUser.id, email: dbUser.email },
+            { id: dbUser.id, email: dbUser.email, nombre: dbUser.nombre },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
         return res.json({ message: 'Autenticado', token: jwtToken });
-        //****AQUI PUEDE CAMBIAR */
-        //Autenticar al usuario en la sesion(Passport)
-        /*req.login(dbUser, (err) => {
-            if (err) {
-                return res.status(500).json({ message: 'Error al autenticar usuario' });
-            }
-            //GENERA JWT
-            const jwtToken = jwt.sign(
-                { id: dbUser.id, email: dbUser.email },
-                process.env.JWT_SECRET,
-                { expiresIn: '1h' }
-            );
-            return res.json({ message: 'Autenticado', token: jwtToken });
-        });*/
+        
 
     } catch (error) {
         console.log("Error en verificacion: ", error)

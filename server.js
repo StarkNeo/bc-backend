@@ -33,10 +33,9 @@ app.use('/auth', authRoutes);
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/upload-excel', upload.single('file'), async (req, res) => {
-    console.log(req.file);
     try {
         if (!req.file) {
-            return res.status(400).json({ message: 'No se envió archivo' });
+            return res.status(400).json({ message: 'Sin documento' });
         }
 
         const result = excelToJson(
@@ -59,11 +58,11 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
         //Validar Estrucura del Excel
         let hasKeyBalanza = Object.keys(result).includes('Balanza de Comprobación');
         if (!hasKeyBalanza) {
-            return res.status(400).json({ message: 'Archivo Excel no tiene la estructura esperada'});
+            return res.status(400).json({ message: 'Fallo estructura Excel'});
         }
         let hasMaxColumns = Math.max(...result['Balanza de Comprobación'].map(row => Object.keys(row).length)) >= 8;
         if (!hasKeyBalanza || !hasMaxColumns) {
-            return res.status(400).json({ message: 'Archivo Excel no tiene la estructura esperada' });
+            return res.status(400).json({ message: 'Fallo estructura Excel' });
         }
 
         const objectsFiltered = result['Balanza de Comprobación'].filter(row => {
@@ -97,7 +96,7 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Error procesando el archivo' });
+        res.status(500).json({ message: 'Error al procesar' });
     }
 });
 

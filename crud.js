@@ -35,7 +35,7 @@ async function getBalanzasPending(req, res, pool) {
     let year = Number(date.getFullYear());
     let month = Number(date.getMonth() + 1);
     try {
-        const result = await pool.query('SELECT balanza_control.id, balanza_control.rfc, balanza_control.ejercicio, balanza_control.mes, balanza_control.pendiente, clientes.nombre FROM balanza_control JOIN clientes ON balanza_control.rfc = clientes.rfc WHERE ejercicio<=$1 AND mes<$2', [year, month]);
+        const result = await pool.query('SELECT balanza_control.id, balanza_control.rfc, balanza_control.ejercicio, balanza_control.mes, balanza_control.pendiente, clientes.nombre FROM balanza_control JOIN clientes ON balanza_control.rfc = clientes.rfc WHERE (ejercicio<=$1 AND mes<$2) OR (ejercicio<$1 AND mes<=12)', [year, month]);
         res.json(result.rows);
     } catch (error) {
         console.error(error);
@@ -60,9 +60,9 @@ const saveBalanzaToDB = async (result, req, res, pool) => {
         }
         return res.status(400).json({ message });
     }
-    
-    
-    
+
+
+
     let id = await findId({ rfc: req.body.rfc, ejercicio: req.body.ejercicio, mes: req.body.mes }, pool);
     if (id) {
         const client = await pool.connect();
@@ -100,16 +100,16 @@ const saveBalanzaToDB = async (result, req, res, pool) => {
             }
             await client.query('COMMIT');
             await client.query('UPDATE balanza_control SET pendiente=false, fecha_carga=NOW(), bza_id=$1 WHERE id=$2', [req.body.rfc + req.body.ejercicio + req.body.mes, id]);
-            res.json({ message: 'Archivo procesado y datos guardados correctamente', rows: result.length });
+            res.json({ message: 'Archivo procesado', rows: result.length });
         } catch (error) {
             await client.query('ROLLBACK');
             console.error(error);
-            res.status(500).json({ message: 'Error al guardar en base de datos' });
+            res.status(500).json({ message: 'Error en base de datos' });
         } finally {
             client.release();
         }
     } else {
-        res.status(400).json({ message: 'Ya existe una balanza para este cliente, ejercicio y mes' });
+        res.status(400).json({ message: 'Balanza duplicada' });
 
     }
 
