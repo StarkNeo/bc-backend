@@ -7,7 +7,7 @@ const router = express.Router();
 const dotenv = require('dotenv').config();
 
 const upload = multer(); // Configuración de multer para recibir archivos multiform-data
-
+console.log("dotenv:", dotenv.parsed);
 //Registration Route
 router.post('/reset-password', resetPassword);
 //Login Route
@@ -73,20 +73,20 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     }
 
     //Forward files to microservice
+    const formData = new FormData();
     for (const file of req.files) {
-      const formData = new FormData();
       formData.append('file', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
-      const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      if (!response.ok) {
-        return res.status(500).json({ error: 'Error processing file in microservice' });
-      }
-      const result = await response.json();
-      console.log('Microservice response:', result);
-      res.status(200).json({ message: 'File uploaded successfully', data: result });
     }
+    const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) {
+      return res.status(500).json({ error: 'Error processing file in microservice' });
+    }
+    const result = await response.json();
+    console.log('Microservice response:', result);
+    res.status(200).json({ message: 'File uploaded successfully', data: result });
 
   }
   catch (error) {
