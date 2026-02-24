@@ -9,6 +9,7 @@ const excelToJson = require('convert-excel-to-json');
 const crud = require('./crud');
 const authRoutes = require('./routes/auth.js');
 const passportConfig = require('./config/passportConfig');
+const { authStatus } = require('./controllers/authController');
 
 
 dotenv.config();
@@ -33,6 +34,16 @@ app.use('/auth', authRoutes);
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/upload-excel', upload.single('file'), async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1]; // Obtener token del encabezado
+    if (!token) {
+        return res.status(401).json({ authenticated: false });
+    }
+    const authResult = await authStatus(token);
+    console.log(authResult)
+    if (!authResult) {
+        return res.status(401).json({ authenticated: false, message: 'Token inválido o expirado' });
+    }
+
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'Sin documento' });
@@ -58,7 +69,7 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
         //Validar Estrucura del Excel
         let hasKeyBalanza = Object.keys(result).includes('Balanza de Comprobación');
         if (!hasKeyBalanza) {
-            return res.status(400).json({ message: 'Fallo estructura Excel'});
+            return res.status(400).json({ message: 'Fallo estructura Excel' });
         }
         let hasMaxColumns = Math.max(...result['Balanza de Comprobación'].map(row => Object.keys(row).length)) >= 8;
         if (!hasKeyBalanza || !hasMaxColumns) {
@@ -71,7 +82,7 @@ app.post('/upload-excel', upload.single('file'), async (req, res) => {
                 return columnA.includes('-');
             }
         })
-        
+
         const objectsFilteredMapped = objectsFiltered.map((row) => {
             row.cuenta = row.A;
             delete row.A;

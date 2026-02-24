@@ -84,8 +84,17 @@ const login = async (req, res, next) => {
 };
 
 
+//SE CAMBIO A FUNCION REUBICAR A SERVICIOS
+const authStatus = async (token) => {
+    try {       
+        const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
 
-
+/*
 const authStatus = async (req, res) => {
     try {
         if (req.user) {
@@ -101,7 +110,7 @@ const authStatus = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error verificando estado de autenticación' });
     }
-};
+};*/
 const logout = async (req, res) => {
     try {
         // 1. Cerrar sesión de Passport
@@ -275,7 +284,7 @@ const verify2FA = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
-        return res.json({ message: 'Autenticado', token: jwtToken });
+        return res.json({ message: 'Autenticado', token: jwtToken, nombre: dbUser.nombre });
         
 
     } catch (error) {
@@ -294,4 +303,4 @@ const reset2FA = async (req, res) => {
     }
 };
 
-module.exports = { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup };
+module.exports = { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup};

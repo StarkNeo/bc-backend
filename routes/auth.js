@@ -1,48 +1,101 @@
 const express = require('express');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const {resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup} = require('../controllers/authController');
+const multer = require('multer');
+const { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup } = require('../controllers/authController');
 const router = express.Router();
 
+const upload = multer(); // Configuración de multer para recibir archivos multiform-data
+
 //Registration Route
-router.post('/reset-password',resetPassword);
+router.post('/reset-password', resetPassword);
 //Login Route
-router.post('/login',login);
+router.post('/login', login);
 
 //Get user authentication status
 router.post('/check-auth', (req, res) => {
   const token = req.headers.authorization?.split(' ')[1]; // Obtener token del encabezado
-  if(!token){
+  if (!token) {
     return res.json({ authenticated: false });
 
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.status(200).json({ authenticated: true, user: decoded['nombre'] });
+    //res.status(200).json({ authenticated: true, user: decoded['nombre'] });
+    res.status(200).json({ authenticated: true })
   } catch (error) {
-    res.status(403).json({ authenticated: false, message: 'Token inválido' });
-  } 
-  
+    res.status(401).json({ authenticated: false, message: 'Token inválido' });
+  }
+
 });
 
 //Auth Status Route
-router.get('/status', authStatus);
+//router.get('/status', authStatus);
 // Logout Route
 router.post('/logout', logout);
 
 //Se accesa a las siguientes rutas solo si el usuario está autenticado
 // 2FA Setup Route
-router.get('/setup-2fa',setup2FA);
+router.get('/setup-2fa', setup2FA);
 
-router.post('/verify-2fa-setup',verify2FASetup); 
+router.post('/verify-2fa-setup', verify2FASetup);
 
 // 2FA Verification Route
-router.post('/verify-2fa',verify2FA);
+router.post('/verify-2fa', verify2FA);
 
 // Reset Route
 
-router.post('/2fa-reset',reset2FA);
+router.post('/2fa-reset', reset2FA);
 
+// Get cumplimiento data from the backend-cumplimiento microservice
+router.get('/cumplimiento', async (req, res) => {
+  try {
+    const response = await fetch('http://localhost:5000/cumplimiento');
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching cumplimiento data:', error);
+    res.status(500).json({ error: 'Error fetching cumplimiento data' });
+  }
+});
+
+// Upload cumplimiento file
+router.post('/upload', upload.array('file', 10), async (req, res) => {
+  console.log("FILES RECEIVED:", req.files);
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    //Forward files to microservice
+    for (const file of req.files) {
+      const formData = new FormData();
+      formData.append('file', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
+      const response = await fetch('http://localhost:5000/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (!response.ok) {
+        return res.status(500).json({ error: 'Error processing file in microservice' });
+      }
+      const result = await response.json();
+      console.log('Microservice response:', result);
+      res.status(200).json({ message: 'File uploaded successfully', data: result });
+    }
+
+  }
+  catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ error: 'Error uploading file' });
+
+  }
+
+}
+);
 
 
 module.exports = router;

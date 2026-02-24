@@ -4,6 +4,7 @@ const dotenv = require('dotenv').config();
 
 
 //PRODUCCION EN RENDER
+
 const pool = new Pool({
 connectionString:process.env.PGSTRING,
 ssl: { rejectUnauthorized: false }
@@ -22,6 +23,5 @@ const pool = new Pool({
   password: process.env.PASSWORDDB,
   port: process.env.PORTDB,
 });
-
-module.exports = pool;
 */
+module.exports = pool;
