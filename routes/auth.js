@@ -81,9 +81,20 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
       method: 'POST',
       body: formData
     });
+
+    //If microservice returns an error, forward that error to the client
     if (!response.ok) {
-      return res.status(500).json({ error: 'Error processing file in microservice' });
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch (jsonError) {
+        console.error('Error parsing microservice error response as JSON:', jsonError);
+        errorData = { error: 'Unknown error from microservice' };
+      }
+      return res.status(response.status).json({ error: errorData.error || 'Error processing file in microservice', status: response.status });
     }
+
+    //Parse success JSON
     const result = await response.json();
     console.log('Microservice response:', result);
     res.status(200).json({ message: 'File uploaded successfully', data: result });
