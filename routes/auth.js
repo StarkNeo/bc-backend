@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup } = require('../controllers/authController');
 const router = express.Router();
+const dotenv = require('dotenv').config();
 
 const upload = multer(); // Configuración de multer para recibir archivos multiform-data
 
@@ -50,7 +51,7 @@ router.post('/2fa-reset', reset2FA);
 // Get cumplimiento data from the backend-cumplimiento microservice
 router.get('/cumplimiento', async (req, res) => {
   try {
-    const response = await fetch('http://localhost:5000/cumplimiento');
+    const response = await fetch(`${process.env.URL_MICROSERVICE}/cumplimiento`);
     const data = await response.json();
     res.json(data);
   } catch (error) {
@@ -75,7 +76,7 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     for (const file of req.files) {
       const formData = new FormData();
       formData.append('file', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
-      const response = await fetch('http://localhost:5000/upload', {
+      const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
         method: 'POST',
         body: formData
       });
