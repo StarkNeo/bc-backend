@@ -75,7 +75,7 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     //Forward files to microservice
     const formData = new FormData();
     for (const file of req.files) {
-      formData.append('file', new Blob([file.buffer], { type: file.mimetype }), file.originalname);
+      formData.append('file', file.buffer, file.originalname);
     }
     const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
       method: 'POST',
@@ -87,6 +87,7 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
       let errorData = {};
       try {
         errorData = await response.json();
+        console.error('Error response from microservice:', errorData);
       } catch (jsonError) {
         console.error('Error parsing microservice error response as JSON:', jsonError);
         errorData = { error: 'Unknown error from microservice' };
