@@ -6,6 +6,7 @@ const { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA,
 const router = express.Router();
 const dotenv = require('dotenv').config();
 const FormData = require('form-data');
+const axios = require('axios');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -67,57 +68,68 @@ router.get('/cumplimiento', async (req, res) => {
 
 // Upload cumplimiento file
 router.post('/upload', upload.array('file', 10), async (req, res) => {
-  console.log("FILES RECEIVED:", req.files);
   try {
+    // Validar token
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
+
+    // Validar archivos
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    //Forward files to microservice
-    const formData = new FormData();
-    for (const file of req.files) {
-      formData.append("file", Buffer.from(file.buffer), {filename: file.originalname, contentType: file.mimetype});
-    }
-    
-    console.log("CONTENIDO FORM DATA:", formData);
+    console.log("FILES EN GATEWAY:",
+      req.files.map(f => ({
+        name: f.originalname,
+        size: f.size
+      }))
+    );
 
-    const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
-      method: "POST",
-      body: formData,
-      headers: formData.getHeaders()
+    //Reconstruir FormData
+    const formData = new FormData();
+
+    for (const file of req.files) {
+      formData.append('file', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype
+      });
+    }
+
+    // Enviar al microservicio
+    const response = await axios.post(
+      `${process.env.URL_MICROSERVICE}/upload`,
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          Authorization: `Bearer ${token}`
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
+      }
+    );
+
+    // Responder al cliente
+    return res.status(200).json({
+      message: 'Files uploaded successfully',
+      microserviceResponse: response.data
     });
 
-    //If microservice returns an error, forward that error to the client
-    if (!response.ok) {
-      let errorData = {};
-      try {
-        errorData = await response.json();
-        console.error('Error response from microservice:', errorData);
-      } catch (jsonError) {
-        console.error('Error parsing microservice error response as JSON:', jsonError);
-        errorData = { error: 'Unknown error from microservice' };
-      }
-      return res.status(response.status).json({ error: errorData.error || 'Error processing file in microservice', status: response.status });
-    }
+  } catch (error) {
+    console.error("ERROR EN GATEWAY:",
+      error.response?.data || error.message
+    );
 
-    //Parse success JSON
-    const result = await response.json();
-    console.log('Microservice response:', result);
-    res.status(200).json({ message: 'File uploaded successfully', data: result });
-
+    return res.status(
+      error.response?.status || 500
+    ).json({
+      error: error.response?.data || 'Error uploading files'
+    });
   }
-  catch (error) {
-    console.error('Error uploading file:', error);
-    res.status(500).json({ error: 'Error uploading file' });
+});
 
-  }
-
-}
-);
 
 
 module.exports = router;
