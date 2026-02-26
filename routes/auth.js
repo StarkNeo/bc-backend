@@ -76,10 +76,10 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     //Forward files to microservice
     const formData = new FormData();
     for (const file of req.files) {
-      formData.append('file', file.buffer, {filename: file.originalname, contentType: file.mimetype});
+      formData.append("file", file.buffer, {filename: file.originalname, contentType: file.mimetype});
     }
     const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
       headers: formData.getHeaders()
     });
