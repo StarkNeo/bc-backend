@@ -80,9 +80,10 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     }
     for(const key in formData) {
       console.log(`FormData key: ${key}, value: ${formData[key]}`);
-      console.log(`FormData get ${key}:`, formData.get(key));
+      
     }
-    
+    console.log("CONTENIDO FORM DATA:", formData);
+
     const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
       method: "POST",
       body: formData,
