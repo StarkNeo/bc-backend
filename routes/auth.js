@@ -7,7 +7,11 @@ const router = express.Router();
 const dotenv = require('dotenv').config();
 const FormData = require('form-data');
 
-const upload = multer(); // Configuración de multer para recibir archivos multiform-data
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // Limite de tamaño de archivo a 10MB
+}); // Configuración de multer para recibir archivos multiform-data
+
 console.log("dotenv:", dotenv.parsed);
 //Registration Route
 router.post('/reset-password', resetPassword);
