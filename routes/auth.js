@@ -5,7 +5,7 @@ const multer = require('multer');
 const { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup } = require('../controllers/authController');
 const router = express.Router();
 const dotenv = require('dotenv').config();
-const formData = require('form-data');
+const FormData = require('form-data');
 
 const upload = multer(); // Configuración de multer para recibir archivos multiform-data
 console.log("dotenv:", dotenv.parsed);
@@ -80,7 +80,8 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     }
     const response = await fetch(`${process.env.URL_MICROSERVICE}/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: formData.getHeaders()
     });
 
     //If microservice returns an error, forward that error to the client
