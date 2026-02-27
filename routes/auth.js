@@ -4,16 +4,19 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { resetPassword, login, authStatus, logout, setup2FA, verify2FA, reset2FA, verify2FASetup } = require('../controllers/authController');
 const router = express.Router();
-const dotenv = require('dotenv').config();
 const FormData = require('form-data');
 const axios = require('axios');
+const dotenv = require('dotenv');
+dotenv.config();
+
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // Limite de tamaño de archivo a 10MB
 }); // Configuración de multer para recibir archivos multiform-data
 
-console.log("dotenv:", dotenv.parsed);
+const URL_MICROSERVICE = process.env.URL_MICROSERVICE; // Cambia a URL_MICROSERVICE para producción
+
 //Registration Route
 router.post('/reset-password', resetPassword);
 //Login Route
@@ -99,12 +102,11 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
 
     // Enviar al microservicio
     const response = await axios.post(
-      `${process.env.URL_MICROSERVICE}/upload`,
+      `${URL_MICROSERVICE}/upload`,
       formData,
       {
         headers: {
-          ...formData.getHeaders(),
-          Authorization: `Bearer ${token}`
+          ...formData.getHeaders()
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity
