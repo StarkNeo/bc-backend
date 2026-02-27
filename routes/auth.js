@@ -64,8 +64,7 @@ router.get('/cumplimiento', async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error('Error fetching cumplimiento data:', error);
-    res.status(500).json({ error: 'Error fetching cumplimiento data' });
+    res.status(500).json({ error: 'Error al extraer los datos de cumplimiento' });
   }
 });
 
@@ -75,12 +74,12 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     // Validar token
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
+      return res.status(401).json({ error: 'No se proporcionó token de autenticación' });
     }
 
     // Validar archivos
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
+      return res.status(400).json({ error: 'No se adjuntaron documentos' });
     }
 
     console.log("FILES EN GATEWAY:",
@@ -115,7 +114,7 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
 
     // Responder al cliente
     return res.status(200).json({
-      message: 'Files uploaded successfully',
+      message: 'Archivos subidos exitosamente',
       microserviceResponse: response.data
     });
 
@@ -127,7 +126,7 @@ router.post('/upload', upload.array('file', 10), async (req, res) => {
     return res.status(
       error.response?.status || 500
     ).json({
-      error: error.response?.data || 'Error uploading files'
+      error: error.response?.data || 'Error al cargar documentos'
     });
   }
 });
